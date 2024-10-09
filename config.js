@@ -1,14 +1,13 @@
-网站标题="中原新能源"
-用户接口="https://xnyserver.nair.top/x/act.php?a=getalluser"
-数据接口="https://xnyserver.nair.top/x/act.php?a=getteam"
+网站标题=""
+用户接口=""
+数据接口=""
 
 //数据字段对应
-用户="nm"
-时间="created_at"
-油量="am"
-单价="cprice"
-金额="hf"
-等级="lv"
+用户=""
+金额=""
+等级=""
+奖金=""
 
-
-奖金规则="if( #等级# ==## )"
+奖金规则=`if( #等级# ==#黄金会员# ){return #金额#*0.01};
+if( #等级# ==#白金会员# ){return #金额#*0.02};
+`
