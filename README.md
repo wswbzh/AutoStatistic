@@ -1,7 +1,9 @@
 # AutoStatistic
 Auto statistic page for multiple level member system
 
-edit config.js
+1.edit config.js
+
+2.run index.html
 
 donate
 
