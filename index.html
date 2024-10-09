@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析</title>
+    <link href="bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="margin:20px">
+    <div id="container">
+         <div style="width:100%">
+            <h2 style="text-align: center;">{{title}}</h2>
+            <input class="form-control mb-3" type="search" placeholder="手机或昵称或姓名" @input="go" list="ll"/>
+            
+            <datalist id="ll">
+                <option v-for="m in tarr" :value="m.mobile">{{m.mobile}} - {{m.nickname}} - {{m.realname}}</option>
+            </datalist>
+            
+            开始日期：<input class="form-control  mb-3" type="date" placeholder="开始日期" v-model="from">
+            结束日期：<input class="form-control  mb-3" type="date" placeholder="结束日期" v-model="to">
+            
+            <button class="btn btn-success  mb-3" @click="sr">查询</button>
+            
+            
+        </div>
+        <div class="">
+            级别：<span>{{lv}}</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;伞下人数：<span style="font-weight:bold">{{allcc.length}}</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;合计油量：<span  style="font-weight:bold;color:blue;">{{ally.toFixed(2)}}</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;合计金额：<span  style="font-weight:bold;color:red;">{{all.toFixed(2)}}</span>
+        
+        </div> 
+       <table class="table table-bordered" style="max-width:1000px;margin-top:20px"> 
+        <tr>
+            <th>用户</th>
+            <th>时间</th>
+            <th>油量</th>
+            <th>单价</th>
+            <th>金额</th>
+            <th>奖金</th>
+        </tr>
+        <tbody id="ls">
+            <tr v-for="(v,k) in arr"> 
+                <td>{{v.nm}}</td>
+                <td>{{new Date(v.created_at*1000).format('yyyy-MM-dd hh:mm')}}</td>
+                <td>{{!isNaN(v.am)?v.am.toFixed(2):v.am}}</td>
+                <td>{{v.cprice}}</td>
+                <td>{{!isNaN(v.hf)?v.hf.toFixed(2):v.hf}}</td>
+                <td>{{!isNaN(v.jj)?v.jj.toFixed(2):v.jj}}</td>
+            </tr>
+        </tbody>
+       </table>
+    </div>
+   
+
+   
+    <script src="vue.global.min.js"></script>
+    <script src="jquery.min.js"></script>
+    <script src="config.js"></script>
+    <script>
+    let lvmap={};
+     lvmap[0]="";
+    lvmap[13]="黄金会员";
+    lvmap[14]="铂金会员";
+    lvmap[15]="钻石会员";
+    lvmap[16]="V1";
+    lvmap[17]="V2";
+    lvmap[18]="V3";
+    lvmap[19]="V4";
+    lvmap[20]="合伙人";
+
+    const app = {
+        data() {
+          return {
+            title:"",
+            arr:[],
+            uarr:[],
+            tarr:[],
+            from:"",
+            to:"",
+            cc:"",
+            all:0,
+            ally:0,
+            mobile:"",
+            allcc:[],
+            myid:0,
+            lv:""
+          }
+        },
+        mounted(){
+            this.title = 网站标题;
+            fetch(用户接口).then(x=>x.json()).then(y=>this.uarr=y);
+        },
+        methods:{
+            sr(){
+              if(this.from==""){alert("开始日期不能为空");return;}
+              if(this.to==""){alert("结束日期不能为空");return;}
+              if(this.mobile==""){alert("用户不存在");return;}
+              if(this.allcc.length==0){
+                alert("该用户无下级");return;
+              }
+              this.arr =[];
+              this.allcc.push(this.myid);
+              fetch(数据接口+'&f='+this.from+"&t="+this.to, { method: 'post',body: JSON.stringify(this.allcc),headers: {'Content-Type': 'application/json'}}).then(xx=>xx.json()).then(d=>{
+                    this.all = 0;
+                    this.ally = 0;
+                    let map={};
+                    for(let i=0;i<this.uarr.length;i++){
+                            let m = this.uarr[i];
+                            map[m.id] = m;
+                    }
+                    for(let i in d){
+                          if("am" in d[i]){
+                              console.log(d[i]);
+                               if(d[i].sname=="都江堰市界牌社区" && d[i].created_at<1697558400){
+                                   continue;
+                               }
+                               d[i].cprice = d[i].cost;
+                               d[i].nm = map[d[i].member_id].nickname+"("+map[d[i].member_id].mobile+")";
+                               this.all += d[i].hf;
+                               this.ally += d[i].am-0;
+                          }
+                    }
+                    this.arr = d;
+                  })
+              
+            },
+            go(e){
+                let x = e.target.value;
+                console.log(x);
+                this.tarr=[];
+                this.allcc=[];
+                this.mobile="";
+                for(let i=0;i<this.uarr.length;i++){
+                    let m = this.uarr[i];
+                    if(m.mobile==null){m.mobile=""}
+                    if(m.realname==null){m.realname=""}
+                    if(m.nickname==null){m.nickname=""}
+                    if(m.mobile.indexOf(x)!=-1 || m.realname.indexOf(x)!=-1 || m.nickname.indexOf(x)!=-1){
+                        this.tarr.push(m);
+                        if(this.tarr.length>=5)break;
+                    }
+                }
+                
+                if(x.length==11){
+                    let mid= "";
+                    for(let i=0;i<this.uarr.length;i++){
+                        let m = this.uarr[i];
+                        if(m.mobile==x){
+                            mid = m.id;
+                            break;
+                        }
+                    }
+                    console.log(mid);
+                    
+                    if(mid!=""){
+                        this.mobile = x;
+                        this.myid = mid;
+                        let map = {};
+                        for(let i=0;i<this.uarr.length;i++){
+                            let m = this.uarr[i];
+                            map[m.id] = m;
+                            map[m.id]["cc"]=[];
+                        }
+                        for(let i=0;i<this.uarr.length;i++){
+                            let m = this.uarr[i];
+                            if(m.pid>0 && (m.pid in map)){
+                                map[m.pid].cc.push(m.id);
+                            }
+                        }
+                        for(let i=0;i<map[mid].cc.length;i++){
+                            let c = map[mid].cc[i];
+                             map[mid].cc.push(...map[c].cc);
+                        }
+                        this.allcc = map[mid].cc;
+                        this.lv = lvmap[map[mid].level-0];
+                    }
+                }
+            }
+        }
+      }
+     Vue.createApp(app).mount('#container');
+
+      
+    Date.prototype.format = function(fmt) { 
+         var o = { 
+            "M+" : this.getMonth()+1,                 //月份 
+            "d+" : this.getDate(),                    //日 
+            "h+" : this.getHours(),                   //小时 
+            "m+" : this.getMinutes(),                 //分 
+            "s+" : this.getSeconds(),                 //秒 
+            "q+" : Math.floor((this.getMonth()+3)/3), //季度 
+            "S"  : this.getMilliseconds()             //毫秒 
+        }; 
+        if(/(y+)/.test(fmt)) {
+                fmt=fmt.replace(RegExp.$1, (this.getFullYear()+"").substr(4 - RegExp.$1.length)); 
+        }
+         for(var k in o) {
+            if(new RegExp("("+ k +")").test(fmt)){
+                 fmt = fmt.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+             }
+         }
+        return fmt; 
+    }
+    
+    function urlParam(key){
+        let args={};   
+        let query=location.search.substring(1);
+        let pairs=query.split("&");
+        for(let i=0;i<pairs.length;i++)   
+        {   
+            let pos=pairs[i].indexOf('=');
+            if(pos==-1)   continue;
+            let argname=pairs[i].substring(0,pos);
+            let value=pairs[i].substring(pos+1);
+            args[argname]=unescape(value);
+        }
+        return key in args?args[key]:"";
+    }
+
+
+
+   </script>
+
+</body>
+</html>
